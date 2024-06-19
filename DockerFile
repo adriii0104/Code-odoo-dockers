@@ -1,33 +1,33 @@
-
 FROM odoo:17.0
 
+# Install additional dependencies
+RUN apt-get update \
+    && apt-get install -y \
+        wget \
+        && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y \
-    vim \
-    git \
-    wkhtmltopdf \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Download and install wkhtmltopdf
+RUN wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb \
+    && dpkg -i wkhtmltox_0.12.6-1.bionic_amd64.deb \
+    && apt-get install -f -y \
+    && rm wkhtmltox_0.12.6-1.bionic_amd64.deb
 
-
-RUN mkdir -p /mnt/extra-addons
-
-
-COPY ./Enterprise /mnt/extra-addons/Enterprise
+# Copy addons and configuration
+COPY ./Enterprise /mnt/Enterprise
 COPY ./Custom/Addons/l10n-dominicana /mnt/extra-addons/l10n-dominicana
 COPY ./Custom/Addons/pos_order_barber /mnt/extra-addons/pos_order_barber
-
 
 COPY ./odoo.conf /etc/odoo/odoo.conf
 COPY ./entrypoint.sh /entrypoint.sh
 
-
+# Set executable permissions if needed
 RUN chmod +x /entrypoint.sh
 
-
+# Set WKHTMLTOPDF_BIN environment variable
 ENV WKHTMLTOPDF_BIN=/usr/bin/wkhtmltopdf
 
+# Define the entrypoint command if needed
+# ENTRYPOINT ["/entrypoint.sh"]
 
-ENTRYPOINT ["/entrypoint.sh"]
-
+# Default command to start Odoo
 CMD ["odoo"]
