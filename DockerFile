@@ -4,33 +4,40 @@ FROM odoo:17.0
 USER root
 
 # Instalar dependencias adicionales
-RUN apt-get update \
-    && apt-get install -y \
-        wget \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    zlib1g-dev \
+    libsasl2-dev \
+    libldap2-dev \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    wget
 
 # Descargar e instalar wkhtmltopdf
-# Descarga e instala wkhtmltox
 RUN wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb \
     && dpkg -i wkhtmltox_0.12.6-1.bionic_amd64.deb || apt-get install -f -y \
     && rm wkhtmltox_0.12.6-1.bionic_amd64.deb
 
 # Copiar addons y configuración
-COPY ./Enterprise /mnt/Enterprise
-COPY ./Custom/Addons/l10n-dominicana /mnt/extra-addons/l10n-dominicana
-COPY ./Custom/Addons/pos_order_barber /mnt/extra-addons/pos_order_barber
+COPY Enterprise /mnt/Enterprise
+COPY Custom/Addons/l10n-dominicana /mnt/extra-addons/l10n-dominicana
+COPY Custom/Addons/pos_order_barber /mnt/extra-addons/pos_order_barber
 
-COPY ./odoo.conf /etc/odoo/odoo.conf
-COPY ./entrypoint.sh /entrypoint.sh
+COPY odoo.conf /etc/odoo/odoo.conf
+COPY entrypoint.sh /entrypoint.sh
 
 # Establecer permisos ejecutables si es necesario
 RUN chmod +x /entrypoint.sh
 
 # Establecer la variable de entorno WKHTMLTOPDF_BIN
 ENV WKHTMLTOPDF_BIN=/usr/bin/wkhtmltopdf
+ENV ADDONS_PATH=/mnt/extra-addons,/mnt/Enterprise/odoo/addons,/mnt/extra-addons/l10n-dominicana
 
-# Definir el comando de entrada si es necesario
-# ENTRYPOINT ["/entrypoint.sh"]
+# Exponer el puerto 8069 (predeterminado de Odoo) para ser accesible desde fuera del contenedor
+EXPOSE 8069
 
 # Comando predeterminado para iniciar Odoo
-CMD ["odoo"]
+CMD ["odoo", "-c", "/etc/odoo/odoo.conf"]
